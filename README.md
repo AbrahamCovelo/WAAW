@@ -13,13 +13,11 @@ your html pointing to it. That's all.
 
 Examples
 ========
-
 You can see several examples located in the folder examples/ or loading the
 /index.html in a browser.
 
 How to use it
 =============
-
 Probably the most simple example that produce a sound is this:
 
 var instrument = WAAW.createInstrument();
@@ -28,7 +26,7 @@ instrument.play(0,1,"C4");
 
 
 Check the examples folder to learn how to use microphones, load and play audio
-files or add effects to your sound sources.
+files, add effects to your sound sources or include graphical analyzers.
 
 
 Enjoy it!
