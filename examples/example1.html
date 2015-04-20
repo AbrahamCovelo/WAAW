@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Example 1 | WAAW</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="../js/waaw.js"></script>
+    </head>
+    <body>
+        <h2>Frequency</h2>
+        <canvas id="canvas" style="width:1024px;height:300px;"></canvas>
+        <h2>Wave</h2>
+        <canvas id="canvas2" style="width:1024px;height:300px;"></canvas>
+        <script>
+
+var piano = WAAW.createInstrument();
+piano.createFromOscillator();
+piano.addEffectGain(0.5);
+var analyser = piano.addEffectAnalyser();
+var convolver = piano.addEffectConvolver(WAAW.createNoiseBuffer(8));
+var delay = piano.addEffectDelay(0.1);
+
+//piano.play(0,5,'A4');
+//piano.play(6,5,'A5');
+       // .play(10,5,'A6');
+
+
+//piano.play(0,5,'A0');
+//piano.play(0,0.1,'A0');
+//piano.play(0,5,'A1');
+piano.play(0,2,'A3');
+piano.play(2,2,'A4');
+//piano.play(20,5,'A4');
+//piano.play(25,5,'A5');
+//piano.play(30,5,'A6');
+//piano.play(35,5,'A7');
+
+
+WAAW.updateGraphs(analyser, document.getElementById('canvas'), document.getElementById('canvas2'));
+
+
+
+///*
+
+console.assert(WAAW.getSemitonesBeetween2Notes('A0','D2')===17,'A0-D2');
+console.assert(WAAW.getSemitonesBeetween2Notes('C2','D2')===2,'C2-D2');
+console.assert(WAAW.getSemitonesBeetween2Notes('E2','F2')===1,'E2-F2');
+console.assert(WAAW.getSemitonesBeetween2Notes('E1','F2')===13,'E1-F2');
+console.assert(WAAW.getSemitonesBeetween2Notes('A2','F1')===-16,'A2-F1');
+console.assert(WAAW.getSemitonesBeetween2Notes('A#0','D#2')===17,'A#0-D#2');
+console.assert(WAAW.getSemitonesBeetween2Notes('Bb0','B1')===13,'Bb0-B1');
+console.assert(WAAW.getSemitonesBeetween2Notes('B1','Bb0')===-13,'B1-Bb0');
+console.assert(WAAW.getSemitonesBeetween2Notes('C3','C3')===0,'C3-C3');
+console.assert(WAAW.getSemitonesBeetween2Notes('A#3','A#3')===0,'A#3-A#3');
+console.assert(WAAW.getSemitonesBeetween2Notes('Gb2','Gb2')===0,'Gb2-Gb2');
+console.assert(WAAW.getSemitonesBeetween2Notes('Gb2','Nononono')===null,'Gb2-Nononono');
+console.assert(WAAW.getSemitonesBeetween2Notes('Nononono','Gb2')===null,'Nononono-Gb2');
+console.assert(WAAW.getSemitonesBeetween2Notes('Nononono','Nononono')===null,'Nononono-Nononono');
+console.assert(WAAW.getSemitonesBeetween2Notes()===null,'-No params-');
+
+document.write('A0-D2: '+WAAW.getSemitonesBeetween2Notes('A0','D2')+"<br/>\n");//17
+document.write('C2-D2: '+WAAW.getSemitonesBeetween2Notes('C2','D2')+"<br/>\n");//2
+document.write('E2-F2: '+WAAW.getSemitonesBeetween2Notes('E2','F2')+"<br/>\n");//2
+document.write('E1-F2: '+WAAW.getSemitonesBeetween2Notes('E1','F2')+"<br/>\n");//2
+document.write('Gb2-Gb2: '+WAAW.getSemitonesBeetween2Notes('Gb2','Gb2')+"<br/>\n");//2
+
+console.assert(WAAW.getNoteFromFrequency(110)==='A2','110Hz == A2');
+document.write('110Hz: '+WAAW.getNoteFromFrequency(110)+"<br/>\n");
+document.write('220Hz: '+WAAW.getNoteFromFrequency(220)+"<br/>\n");
+document.write('440Hz: '+WAAW.getNoteFromFrequency(440)+"<br/>\n");
+document.write('-440Hz: '+WAAW.getNoteFromFrequency(-440)+"<br/>\n");
+//
+//
+//var analyser = piano.addEffectAnalyser();
+
+
+//updateGraphs(analyser, document.getElementById('canvas'), document.getElementById('canvas2'));
+//*/
+
+
+
+//*/
+
+
+
+        </script>
+    </body>
+</html>
