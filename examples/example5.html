@@ -6,11 +6,20 @@ and open the template in the editor.
 -->
 <html>
     <head>
-        <title>TODO supply a title</title>
+        <title>Example 5 | WAAW</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="../js/waaw.js"></script>
     </head>
     <body>
-        <div>TODO write content</div>
+        <script>
+            
+var piano = WAAW.createInstrument();
+piano.createFromOscillator();
+piano.addEffectDynamicsCompressor(-10, 20, 15, 3, 0.5, 0.5);
+
+piano.play(0,3,"C4",0);
+
+        </script>
     </body>
 </html>

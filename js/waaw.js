@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+//Based on http://webaudio.github.io/web-audio-api/
 "use strict";
 
 var WAAW = WAAW || {};
@@ -56,6 +56,32 @@ WAAW = {
     getOutput: function()
     {
         return this.output;
+    },
+    
+    /**
+     * Places a new audio node connected to the current output new
+     * connections will connect to this audio node
+     * 
+     * @param AudioNode newOutput
+     * @returns WAAW
+     */
+    setOutput: function(newOutput)
+    {
+        newOutput.connect(this.getOutput());
+        this.output = newOutput;
+        
+        return this;
+    },
+    
+    /*
+     * Returns the audio listener for implementing 3D audio spatialization
+     * 
+     * @returns AudioListener
+     */
+    getListener: function()
+    {
+        return this.audioContext.listener;
+        //.setOrientation(frontVectorX, frontVectorY, frontVectorZ, upVectorX, upVectorY, upVectorZ);
     },
     
     //Graphical anylizer functions
@@ -358,6 +384,7 @@ WAAW = {
     
     createNoiseBuffer: function(seconds)
     {
+        //http://noisehack.com/custom-audio-effects-javascript-web-audio-api/
         if(typeof seconds === 'undefined')
         {
             seconds = 1;
@@ -371,6 +398,23 @@ WAAW = {
             right[i] = Math.random() * 2 - 1;
         }
         return noiseBuffer;
+    },
+    
+    makeDistortionCurve: function (amount)
+    {
+        // http://stackoverflow.com/questions/22312841/waveshaper-node-in-webaudio-how-to-emulate-distortion (from Kevin Ennis)
+        var k = typeof amount === 'number' ? amount : 50,
+        n_samples = 44100,
+        curve = new Float32Array(n_samples),
+        deg = Math.PI / 180,
+        i = 0,
+        x;
+        for ( ; i < n_samples; ++i )
+        {
+            x = i * 2 / n_samples - 1;
+            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        }
+        return curve;
     },
 
 
@@ -401,8 +445,13 @@ WAAW = {
 
             addEffectGain: function(value)
             {
-                if(typeof value === 'undefined' || !value) value = 1;
                 var gain = WAAW.audioContext.createGain();
+                
+                if(typeof value === 'undefined')
+                {
+                    value = 1;
+                }
+                
                 gain.gain.value = value;
                 this.addEffect(gain);
                 return gain;
@@ -410,73 +459,295 @@ WAAW = {
 
             addEffectDelay: function(value)
             {
-                if(typeof value === 'undefined' || !value) value = 1.0;
                 var delay = WAAW.audioContext.createDelay();
-                delay.delayTime.value = delay;
+                
+                if(typeof value === 'undefined')
+                {
+                    value = 0;//[0,AudioContext.maxDelayTime]
+                }
+                
+                delay.delayTime.value = value;
                 this.addEffect(delay);
                 return delay;
             },
 
-            addEffectBiquadFilter: function()
+            addEffectBiquadFilter: function(type, frequency, detune, Q, gain)
             {
                 var biquadFilter = WAAW.audioContext.createBiquadFilter();
+                
+                if(typeof type === 'undefined')
+                {
+                    type = 'lowpass';//('lowpass','highpass','bandpass','lowshelf','highshelf','notch','allpass')
+                }
+                if(typeof frequency === 'undefined')
+                {
+                    frequency = 350;//[10,Nyquist frequency/2]
+                }
+                if(typeof detune === 'undefined')
+                {
+                    detune = 0;
+                }
+                if(typeof Q === 'undefined')
+                {
+                    Q = 1;//[0.0001, 1000]
+                }
+                if(typeof gain === 'undefined')
+                {
+                    gain = 0;//[-40, 40]
+                }
+                
+                biquadFilter.type = "lowshelf";
+                biquadFilter.frequency.value = frequency;
+                biquadFilter.detune.value = detune;
+                biquadFilter.Q.value = Q;
+                biquadFilter.gain.value = 25;
+                
                 this.addEffect(biquadFilter);
                 return biquadFilter;
             },
 
-            addEffectWaveShaper: function()
+            addEffectWaveShaper: function(curve, oversample)
             {
                 var waveShaper = WAAW.audioContext.createWaveShaper();
+                
+                if(typeof curve === 'undefined')
+                {
+                    curve = null;
+                }
+                
+                if(typeof oversample === 'undefined')
+                {
+                    oversample = 'none';//('none','2x','4x')
+                }
+                
                 this.addEffect(waveShaper);
                 return waveShaper;
             },
 
-            addEffectPanner: function()
+            addEffectPanner: function(coneInnerAngle, coneOuterAngle, coneOuterGain, distanceModel, maxDistance, panningModel, refDistance, rolloffFactor, orientationX, orientationY, orientationZ, positionX, positionY, positionZ, velocityX, velocityY, velocityZ)
             {
                 var panner = WAAW.audioContext.createPanner();
+                
+                if(typeof coneInnerAngle === 'undefined')
+                {
+                    coneInnerAngle = 360;//[0-360]
+                }
+                
+                if(typeof coneOuterAngle === 'undefined')
+                {
+                    coneOuterAngle = 360;//[0-360]
+                }
+                
+                if(typeof coneOuterGain === 'undefined')
+                {
+                    coneOuterGain = 0;//[0-360]
+                }
+                
+                if(typeof distanceModel === 'undefined')
+                {
+                    distanceModel = 'inverse';//('linear','inverse','exponential')
+                }
+                
+                if(typeof maxDistance === 'undefined')
+                {
+                    distanceModel = 10000;
+                }
+                
+                if(typeof panningModel === 'undefined')
+                {
+                    panningModel = 'HRTF';//('equalpower','HRTF')
+                }
+                
+                if(typeof refDistance === 'undefined')
+                {
+                    refDistance = 1;
+                }
+                
+                if(typeof rolloffFactor === 'undefined')
+                {
+                    rolloffFactor = 1;
+                }
+                
+                if(typeof orientationX === 'undefined')
+                {
+                    orientationX = 1;
+                }
+                
+                if(typeof orientationY === 'undefined')
+                {
+                    orientationY = 0;
+                }
+                
+                if(typeof orientationZ === 'undefined')
+                {
+                    orientationZ = 0;
+                }
+                
+                if(typeof positionX === 'undefined')
+                {
+                    positionX = 0;
+                }
+                
+                if(typeof positionY === 'undefined')
+                {
+                    positionY = 0;
+                }
+                
+                if(typeof positionZ === 'undefined')
+                {
+                    positionZ = 0;
+                }
+                
+                if(typeof velocityX === 'undefined')
+                {
+                    velocityX = 0;
+                }
+                
+                if(typeof velocityY === 'undefined')
+                {
+                    velocityY = 0;
+                }
+                
+                if(typeof velocityZ === 'undefined')
+                {
+                    velocityZ = 0;
+                }
+                
+                panner.coneInnerAngle = coneInnerAngle;
+                panner.coneOuterAngle = coneOuterAngle;
+                panner.coneOuterGain = coneOuterGain;
+                panner.distanceModel = distanceModel;
+                panner.maxDistance = maxDistance;
+                panner.panningModel = panningModel;
+                panner.refDistance = refDistance;
+                panner.rolloffFactor = rolloffFactor;
+                panner.setOrientation(orientationX, orientationY, orientationZ);
+                panner.setPosition(positionX, positionY, positionZ);
+                panner.setVelocity(velocityX, velocityY, velocityZ);
+                
                 this.addEffect(panner);
                 return panner;
             },
 
-            addEffectStereoPanner: function()
+            addEffectStereoPanner: function(pan)
             {
                 var stereoPanner = WAAW.audioContext.createStereoPanner();
+                
+                if(typeof pan === 'undefined')
+                {
+                    pan = 0;//[-1,1]
+                }
+                stereoPanner.pan.value = pan;
+                
                 this.addEffect(stereoPanner);
                 return stereoPanner;
             },
 
-            addEffectConvolver: function(buffer)
+            addEffectConvolver: function(buffer, normalize)
             {
                 var convolver = WAAW.audioContext.createConvolver();
+                
+                if(typeof buffer === 'undefined')
+                {
+                    buffer = null;
+                }
+                if(typeof normalize === 'undefined')
+                {
+                    normalize = false;
+                }
+                
                 convolver.buffer = buffer;
+                convolver.normalize = normalize;
+                
                 this.addEffect(convolver);
                 return convolver;
             },
 
-            addEffectChannelSplitter: function()
+            addEffectChannelSplitter: function(numberOfChannels)
             {
-                var channelSplitter = WAAW.audioContext.createChannelSplitter();
+                var channelSplitter = WAAW.audioContext.createChannelSplitter(numberOfChannels);
                 this.addEffect(channelSplitter);
                 return channelSplitter;
             },
 
-            addEffectChannelMerger: function()
+            addEffectChannelMerger: function(numberOfChannels)
             {
-                var channelMerger = WAAW.audioContext.createChannelMerger();
+                var channelMerger = WAAW.audioContext.createChannelMerger(numberOfChannels);
                 this.addEffect(channelMerger);
                 return channelMerger;
             },
 
-            addEffectDynamicCompressor: function()
+            addEffectDynamicsCompressor: function(threshold, knee, ratio, reduction, attack, release)
             {
-                var compressor = WAAW.audioContext.createDynamicCompressor();
+                var compressor = WAAW.getAudioContext().createDynamicsCompressor();
+                if(typeof threshold === 'undefined')
+                {
+                    threshold = -24;//[-100,0]
+                }
+                if(typeof knee === 'undefined')
+                {
+                    knee = 30;//[0,40]
+                }
+                if(typeof ratio === 'undefined')
+                {
+                    ratio = 12;//[1,20]
+                }
+                if(typeof reduction === 'undefined')
+                {
+                    reduction = 0;
+                }
+                if(typeof attack === 'undefined')
+                {
+                    attack = 0.003;//[0,1]
+                }
+                if(typeof release === 'undefined')
+                {
+                    release = 0.250;//[0,1]
+                }
+                
+                
+                compressor.threshold.value = threshold;
+                compressor.knee.value = knee;
+                compressor.ratio.value = ratio;
+                compressor.reduction.value = reduction;
+                compressor.attack.value = attack;
+                compressor.release.value = release;
+                
                 this.addEffect(compressor);
                 return compressor;
             },
 
-            addEffectAnalyser: function()
+            addEffectAnalyser: function(fttSize, frequencyBinCount, maxDecibels, minDecibels, smoothingTimeConstant)
             {
                 var analyser = WAAW.audioContext.createAnalyser();
+                
+                if(typeof fttSize === 'undefined')
+                {
+                    fttSize = 2048;//power of two between 32 and 32768
+                }
+                if(typeof frequencyBinCount === 'undefined')
+                {
+                    frequencyBinCount = 1024;//half of fttSize
+                }
+                if(typeof maxDecibels === 'undefined')
+                {
+                    maxDecibels = -30;
+                }
+                if(typeof minDecibels === 'undefined')
+                {
+                    minDecibels = -100;
+                }
+                if(typeof smoothingTimeConstant === 'undefined')
+                {
+                    smoothingTimeConstant = 0.8;//[0,1]
+                }
+                
+                analyser.fttSize = fttSize;
+                analyser.frequencyBinCount = frequencyBinCount;
+                analyser.maxDecibels = maxDecibels;
+                analyser.minDecibles = minDecibels;
+                analyser.smoothingTimeConstant = smoothingTimeConstant;
+                
                 this.addEffect(analyser);
                 return analyser;
             },
