@@ -416,6 +416,25 @@ WAAW = {
         }
         return curve;
     },
+    
+    /**
+     * Intended to be used as the onAudioProcess callback in a script processor
+     * 
+     * @param ScriptProcessingEvent event
+     * @returns null
+     */
+    simpleLowpassFilter: function(event)
+    {
+        //http://noisehack.com/custom-audio-effects-javascript-web-audio-api/
+        var lastOut = 0.0;
+        var input = event.inputBuffer.getChannelData(0);
+        var output = event.outputBuffer.getChannelData(0);
+        for (var i = 0; i < input.length/*bufferSize*/; i++)
+        {
+            output[i] = (input[i] + lastOut) / 2.0;
+            lastOut = output[i];
+        }
+    },
 
 
 
@@ -743,13 +762,48 @@ WAAW = {
                 }
                 
                 analyser.fttSize = fttSize;
-                analyser.frequencyBinCount = frequencyBinCount;
+                //Firefox does not allow changes in frequencyBinCount, commenting next line
+                //analyser.frequencyBinCount = frequencyBinCount;
                 analyser.maxDecibels = maxDecibels;
                 analyser.minDecibles = minDecibels;
                 analyser.smoothingTimeConstant = smoothingTimeConstant;
                 
                 this.addEffect(analyser);
                 return analyser;
+            },
+            
+            addEffectScriptProcessor: function(bufferSize, numberOfInputChannels, numberOfOutputChannels, onAudioProcess)
+            {
+                if(typeof bufferSize === 'undefined')
+                {
+                    bufferSize = 4096;//(256, 512, 1024, 2048, 4096, 8192, 16384)
+                }
+                
+                if(typeof numberOfInputChannels === 'undefined')
+                {
+                    numberOfInputChannels = 2;//[1,32]
+                }
+                
+                if(typeof numberOfOutputChannels === 'undefined')
+                {
+                    numberOfOutputChannels = 2;//[1,32]
+                }
+                
+                if(typeof onAudioProcess === 'undefined')
+                {
+                    onAudioProcess = null;  //Should be a function callback that 
+                                            //receives a AudioProcessingEvent
+                }
+                
+                //Warning createScriptProcessor has been marked as obsolete but
+                //the replacement, the AudioWorkerNode introduced in August 29
+                //2014 is not implemented in any browser yet
+                var scriptProcessor = WAAW.getAudioContext().createScriptProcessor(bufferSize, numberOfInputChannels, numberOfOutputChannels);
+                
+                scriptProcessor.onaudioprocess = onAudioProcess;
+                
+                this.addEffect(scriptProcessor);
+                return scriptProcessor;
             },
 
             addEffect: function(effect)
